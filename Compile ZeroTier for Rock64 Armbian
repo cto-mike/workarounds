@@ -6,7 +6,7 @@
 #-----
 # You need SSH and sudo rights to do this work
 
-# ssh to your Rock64, remove the broken zerotier-one package, the version I had working was 
+# ssh to your Rock64, remove the broken zerotier-one package, the version I had working was 1.14.2
 sudo apt remove zerotier-one
 
 # Install required build tools including RUST!
