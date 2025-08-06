@@ -1,5 +1,6 @@
 #-----
 # Issue: https://github.com/zerotier/ZeroTierOne/issues/2496
+# Reference: https://crystalidea.com/blog/compile-zerotier-client-for-x86_64-and-arm64-linux
 # After Armbian upgrade from jammy (Ubuntu 22.04) to noble (Ubuntu 24.04), zerotier-cli breaks due to dependency on GLIB which operating system does not have
 # These are the condensed notes
 # 2025 Aug 6
