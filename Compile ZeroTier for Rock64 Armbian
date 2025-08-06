@@ -1,0 +1,105 @@
+#-----
+# Issue: https://github.com/zerotier/ZeroTierOne/issues/2496
+# After Armbian upgrade from jammy (Ubuntu 22.04) to noble (Ubuntu 24.04), zerotier-cli breaks due to dependency on GLIB which operating system does not have
+# These are the condensed notes
+# 2025 Aug 6
+#-----
+# You need SSH and sudo rights to do this work
+
+# ssh to your Rock64, remove the broken zerotier-one package, the version I had working was 
+sudo apt remove zerotier-one
+
+# Install required build tools including RUST!
+sudo apt install curl build-essential pkg-config libssl-dev
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source "$HOME/.cargo/env"
+
+# setup which version of ZeroTier
+ZT_VERSION=1.14.2
+wget https://github.com/zerotier/ZeroTierOne/archive/refs/tags/$ZT_VERSION.tar.gz
+tar zxf $ZT_VERSION.tar.gz
+cd ZeroTierOne-*
+
+# Compile with dependencies as part of the binary, this ran about 15-30 minutes, if in doubt of your network, run screen so you can get back to a disconnected terminal 
+make -j`nproc` ZT_STATIC=1 
+
+# make the binary for zerotier-one smaller
+strip zerotier-one
+
+# Note that zerotier-cli and zerotier-idtool are symlinks to zerotier-one BUT calling by different names matters!
+# Ideally you should move the binaries to a secured location since these run as root, my rock is not multi-user so this adhoc setup works for now
+# Your current path would be like /home/<userid>/ZeroTierOne-1.14.2 which is ~/ZeroTierOne-1.14.2 for short
+# You are already there but just in case you wandered off in between
+cd ~/ZeroTierOne-1.14.2
+
+# test run, fork zerotier binary as a server, will not survive a reboot yet
+sudo ./zerotier-one -d
+# should get output like: 
+# Starting Control Plane...
+# Starting V6 Control Plane...
+# press enter, it is running in background
+
+sudo ./zerotier-cli status
+# should get output like
+# 200 info <machineid> 1.14.2 ONLINE
+# this presumes that you had a working Zerotier prior so your /var/lib/zerotier-one has the identity.* files from when you previously joined a network
+
+sudo ./zerotier-cli join <fillinyourZTnetworkid>
+sudo ./zerotier-cli listnetworks
+# this should list your ZT networks as normal, when you login to zerotier.com you should see the machine connected!
+# if you disconnect putty the ZT will continue working, but should you power cycle it will not remember any of this
+
+# Switch to root and create a service to make this survive reboots, and autostart it
+sudo su -
+cat > /usr/lib/systemd/system/zerotier-one.service <<EOF
+[Unit]
+Description=ZeroTier One Compiled
+After=network-online.target network.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/home/$USER/ZeroTierOne-1.14.2/zerotier-one
+Restart=always
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl enable zerotier-one
+
+# For convenience, add new zerotier path to sudo which you need to call it anyway
+# you are still root at this time unless you did an exit in between
+sudo visudo
+# find end edit the line that says:
+# Defaults secure_path
+# use arrow keys to scroll right, find the area of the path before the "
+# add /home/<IDwhereZTwascompiled>/ZeroTierOne-1.14.2/
+CTRL-O
+# save
+CTRL-X
+# exit
+
+# Test with a reboot
+# yeah, the sudo is redundant since still root but it's a (bad?) habit
+sudo reboot now
+
+# Login to SSH again
+sudo systemctl status zerotier-one
+# should be active
+sudo zerotier-cli status
+# should be joined
+sudo zerotier-cli listnetworks
+# should show the networks still connected from before reboot
+
+# TODO: move the binaries someplace where only root or sudo can get to them since leaving root binaries in userspace is not the most secure?
+
+
+
+
+
+
+
+
+
+
