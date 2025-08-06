@@ -51,6 +51,7 @@ sudo ./zerotier-cli listnetworks
 
 # Switch to root and create a service to make this survive reboots, and autostart it
 sudo su -
+ZTUSERNAME=changetoyourusername
 cat > /usr/lib/systemd/system/zerotier-one.service <<EOF
 [Unit]
 Description=ZeroTier One Compiled
@@ -58,7 +59,7 @@ After=network-online.target network.target
 Wants=network-online.target
 
 [Service]
-ExecStart=/home/$USER/ZeroTierOne-1.14.2/zerotier-one
+ExecStart=/home/$ZTUSERNAME/ZeroTierOne-1.14.2/zerotier-one
 Restart=always
 KillMode=process
 
