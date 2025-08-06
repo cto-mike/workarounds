@@ -81,6 +81,9 @@ CTRL-O
 CTRL-X
 # exit
 
+# you can also add that to the end of root's $PATH via .bashrc
+# export PATH=$PATH:/home/<IDwhereZTwascompiled>/ZeroTierOne-1.14.2
+
 # Test with a reboot
 # yeah, the sudo is redundant since still root but it's a (bad?) habit
 sudo reboot now
